@@ -1,35 +1,36 @@
-# Contribution [#]: [Issue Title]
+# Contribution [228]: [Cleanup] Extract duplicated message-merge logic in syncFromGateway
 
-**Contribution Number:** [1 / 2 / 3]  
-**Student:** [Your Name]  
-**Issue:** [GitHub issue link]  
-**Status:** [Phase I / Phase II / Phase III / Phase IV] [In Progress / Complete]
+**Contribution Number:** 2
+**Student:** Adhip Rijal
+**Issue:** (https://github.com/clawwork-ai/ClawWork/issues/228)
+**Status:** [**Phase I** / Phase II / Phase III / Phase IV] [In Progress / Complete]
 
 ---
 
 ## Why I Chose This Issue
 
-[1-2 paragraphs explaining why this issue interests you, how it matches your skills/learning goals, what you hope to learn]
-
+I picked this issue because it's a clean, well-scoped refactor that lets me get familiar with the session-sync service and the message/persistence data flow without needing to change any behavior — a good low-risk way to learn the codebase. Extract-function refactors like this are also good practice for spotting duplication and writing helpers with clear, minimal parameter surfaces, which is a skill I want to sharpen.I also like that the task has a clear definition of done (pnpm check passing, both branches calling the same helper), so I can validate my own work objectively rather than guessing whether I've done "enough."
 ---
 
 ## Understanding the Issue
 
 ### Problem Description
 
-[In your own words, what's broken or missing?]
+syncFromGateway has two branches, one for when local data already exists (hasLocalData) and one for when it doesn't (!hasLocalData). Both branches independently implement almost the same ~50 lines of logic: mapping collapsedMessages into Message[] objects (assigning sessionKey/agentId), loading them into the message store via bulkLoad, and persisting each one through deps.persistence.persistMessage(). Because this logic is copy-pasted rather than shared, any future fix or behavior change to message mapping/persistence has to be applied in two places — and it's easy to update one branch and forget the other, letting the branches silently drift out of sync.
 
 ### Expected Behavior
 
-[What should happen?]
+There should be a single, shared implementation of the "map messages → bulkLoad → persist" logic, extracted into a local helper function (e.g. loadAndPersistMessages). Both the hasLocalData and !hasLocalData branches should call this same helper, passing in only the parameters that actually differ between the two cases. Behavior of syncFromGateway should be unchanged from the outside — this is a pure refactor, not a functional fix.
 
 ### Current Behavior
 
-[What actually happens?]
+The mapping, bulkLoad, and persistMessage logic is duplicated almost verbatim in both branches of the if (hasLocalData) conditional. This works correctly today, but it's fragile: the duplication makes the function longer and harder to read, and increases the risk that the two branches diverge over time as one gets patched without the other.
 
 ### Affected Components
 
-[Which parts of the codebase are involved?]
+- packages/core/src/services/session-sync.ts — specifically the syncFromGateway function (~lines 280–330)
+- Indirectly touches: the messageStore (bulkLoad), and deps.persistence.persistMessage, since the new helper will call into both
+- No changes expected to public APIs, message store internals, or persistence layer — this is confined to internal control flow within syncFromGateway
 
 ---
 
