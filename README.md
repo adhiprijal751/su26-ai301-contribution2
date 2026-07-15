@@ -3,7 +3,7 @@
 **Contribution Number:** 2
 **Student:** Adhip Rijal
 **Issue:** (https://github.com/clawwork-ai/ClawWork/issues/228)
-**Status:** [**Phase I** / Phase II / Phase III / Phase IV] [In Progress / Complete]
+**Status:** [**Phase I** / Phase II / Phase III / Phase IV] [In Progress / **Complete**]
 
 ---
 
