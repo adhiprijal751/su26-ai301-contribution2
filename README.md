@@ -3,7 +3,7 @@
 **Contribution Number:** 2
 **Student:** Adhip Rijal
 **Issue:** (https://github.com/clawwork-ai/ClawWork/issues/228)
-**Status:** [**Phase I** / Phase II / Phase III / Phase IV] [In Progress / **Complete**]
+**Status:** [**Phase I** / **Phase II** / Phase III / Phase IV] [In Progress / **Complete**]
 
 ---
 
@@ -38,19 +38,25 @@ The mapping, bulkLoad, and persistMessage logic is duplicated almost verbatim in
 
 ### Environment Setup
 
-[Notes on setting up your local development environment - challenges you faced, how you solved them]
+Forked the repo and cloned locally. Ran into a few environment snags worth noting:
+- pnpm wasn't installed globally — installed via npm install -g pnpm after corepack prepare pnpm@latest --activate failed with a signature verification error (Cannot find matching keyid), a known issue with corepack's bundled keys being out of sync with npm's registry keys.
+- pnpm install auto-populated allowBuilds entries in pnpm-workspace.yaml (for better-sqlite3, electron, esbuild, win-ca) — this is expected behavior from pnpm's native build-script approval mechanism, not something to revert.
+- pnpm build failed on packages/pwa (unrelated tsc error) and packages/core has no build script at all (ERR_PNPM_RECURSIVE_RUN_NO_SCRIPT) — neither is relevant to this issue, since core is consumed directly as TS by other packages. Used pnpm check from root instead, per the issue's own verification step, which passed cleanly on a fresh checkout.
 
 ### Steps to Reproduce
 
-1. [Step 1]
-2. [Step 2]
-3. [Observed result]
+1. Opened packages/core/src/services/session-sync.ts and located syncFromGateway.
+2. Read through both the hasLocalData and !hasLocalData branches to identify the duplicated mapping/bulkLoad/persistMessage logic described in the issue.
+3. Observed: both branches already call a single shared helper, loadAndPersistMessages({...}), passing only the parameters that differ (messages, and existingMessages in the hasLocalData case only). No duplicated ~50-line block exists in the current code.
 
 ### Reproduction Evidence
 
-- **Commit showing reproduction:** [Link to commit in your fork]
-- **Screenshots/logs:** [If applicable]
-- **My findings:** [What you discovered during reproduction]
+- **Commit showing reproduction:** (https://github.com/adhiprijal751/ClawWork) Didnt commit anything as i found the issue was solved.
+- **Screenshots/logs:**
+adhiprijal@Adhips-MacBook-Pro-1133 ClawWork % git log -S "function loadAndPersistMessages" --oneline -- packages/core/src/services/session-sync.ts
+77f72c1 [Cleanup] Extract duplicated message-merge logic in syncFromGateway (#254)
+- **My findings:**
+This issue is solved — the refactor it describes was already completed in commit 77f72c1 (PR #254), prior to my branch point (dcea705). Current syncFromGateway already extracts the shared logic into a loadAndPersistMessages helper called from both branches with only the differing params passed in. Recommend closing this issue as already resolved / duplicate of #254.
 
 ---
 
